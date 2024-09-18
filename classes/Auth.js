@@ -224,6 +224,22 @@ Auth.prototype.generateMobileConfirmationCode = function (time, tag) {
 };
 
 /**
+ * This is meant to be a private method that updates account details securely (triggers an event to botAccount for a save, without revealing account information to preying eyes - can be bypassed, but simply makes it more challenging to be done without editing the the manager's code)
+ * @param newDetails
+ */
+Auth.prototype._updateAccountDetails = function (newDetails) {
+    // We will loop through all new details and ensure they do no edit any protected details
+    var self = this;
+    var protectedDetails = ["username", "accountName", "oAuthToken", "steamguard", "password", "shared_secret", "identity_secret", "revocation_code", "steamid64", "loginKey", "displayName"];
+    for (var newDetail in newDetails) {
+        if (newDetails.hasOwnProperty(newDetail))
+            if (protectedDetails.indexOf(newDetail) == -1)
+                if (newDetails.hasOwnProperty(newDetail))
+                    privateStore[self.accountName].accountDetails[newDetail] = newDetails[newDetail];
+    }
+    self.emit('updatedAccountDetails', privateStore[self.accountName].accountDetails);
+};
+/**
  * @callback confirmationsCallback
  * @param {Error} error - An error message if the process failed, undefined if successful
  * @param {Array} confirmations - An array of Confirmations
