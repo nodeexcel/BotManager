@@ -190,6 +190,16 @@ Auth.prototype.loginAccount = function (details, callbackErrorOnly) {
     }
 };
 
+/**
+ * Logout from chat of the botAccount
+ * @param details
+ */
+Auth.prototype.logoutAccount = function () {
+    var self = this;
+    self.emit('loggingOut');
+    self.community.chatLogoff();
+
+};
 
 /**
  * Sets the revocation code and returns it if successful (null if it fails validity checks).
@@ -210,6 +220,17 @@ Auth.prototype.has_shared_secret = function () {
 };
 
 /**
+ * Generate two-factor-authentication code used for logging in.
+ * @returns {Error | String}
+ */
+Auth.prototype.generateMobileAuthenticationCode = function () {
+    var self = this;
+    if (privateStore[self.accountName].accountDetails.shared_secret)
+        return SteamTotp.generateAuthCode(privateStore[self.accountName].accountDetails.shared_secret);
+    else
+        return new Error("Failed to generate authentication code. Enable 2-factor-authentication via this tool.");
+};
+/**
  *
  * @param time - Current time of trade (Please use getUnixTime())
  * @param tag - Type of confirmation required ("conf" to load the confirmations page, "details" to load details about a trade, "allow" to confirm a trade, "cancel" to cancel it.)
@@ -223,6 +244,22 @@ Auth.prototype.generateMobileConfirmationCode = function (time, tag) {
         return new Error("Failed to generate confirmation code. Enable 2-factor-authentication via this tool.");
 };
 
+/**
+ * This is meant to be a private method that updates account details securely (triggers an event to botAccount for a save, without revealing account information to preying eyes - can be bypassed, but simply makes it more challenging to be done without editing the the manager's code)
+ * @param newDetails
+ */
+Auth.prototype._updateAccountDetails = function (newDetails) {
+    // We will loop through all new details and ensure they do no edit any protected details
+    var self = this;
+    var protectedDetails = ["username", "accountName", "oAuthToken", "steamguard", "password", "shared_secret", "identity_secret", "revocation_code", "steamid64", "loginKey", "displayName"];
+    for (var newDetail in newDetails) {
+        if (newDetails.hasOwnProperty(newDetail))
+            if (protectedDetails.indexOf(newDetail) == -1)
+                if (newDetails.hasOwnProperty(newDetail))
+                    privateStore[self.accountName].accountDetails[newDetail] = newDetails[newDetail];
+    }
+    self.emit('updatedAccountDetails', privateStore[self.accountName].accountDetails);
+};
 /**
  * @callback confirmationsCallback
  * @param {Error} error - An error message if the process failed, undefined if successful
