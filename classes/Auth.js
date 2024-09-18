@@ -190,6 +190,16 @@ Auth.prototype.loginAccount = function (details, callbackErrorOnly) {
     }
 };
 
+/**
+ * Logout from chat of the botAccount
+ * @param details
+ */
+Auth.prototype.logoutAccount = function () {
+    var self = this;
+    self.emit('loggingOut');
+    self.community.chatLogoff();
+
+};
 
 /**
  * Sets the revocation code and returns it if successful (null if it fails validity checks).
