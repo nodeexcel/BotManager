@@ -210,6 +210,17 @@ Auth.prototype.has_shared_secret = function () {
 };
 
 /**
+ * Generate two-factor-authentication code used for logging in.
+ * @returns {Error | String}
+ */
+Auth.prototype.generateMobileAuthenticationCode = function () {
+    var self = this;
+    if (privateStore[self.accountName].accountDetails.shared_secret)
+        return SteamTotp.generateAuthCode(privateStore[self.accountName].accountDetails.shared_secret);
+    else
+        return new Error("Failed to generate authentication code. Enable 2-factor-authentication via this tool.");
+};
+/**
  *
  * @param time - Current time of trade (Please use getUnixTime())
  * @param tag - Type of confirmation required ("conf" to load the confirmations page, "details" to load details about a trade, "allow" to confirm a trade, "cancel" to cancel it.)
